@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
-import { BaseModel, column, beforeSave, hasMany, belongsTo, beforeCreate } from '@adonisjs/lucid/orm'
+import { BaseModel, column, hasMany, belongsTo, beforeCreate } from '@adonisjs/lucid/orm'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import type { HasMany, BelongsTo } from '@adonisjs/lucid/types/relations'
@@ -75,12 +75,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
     user.user_gid = randomUUID()
   }
 
-  @beforeSave()
-  public static async hashPassword(user: User) {
-    if (user.$dirty.password) {
-      user.password = await hash.make(user.password)
-    }
-  }
 
   // Relazioni
   @belongsTo(() => User, {
@@ -99,5 +93,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
     table: 'auth_access_tokens',
     type: 'auth_token',
     tokenSecretLength: 40,
-  });
+  })
+
 }

@@ -1,8 +1,9 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
+import { BaseModel, column, belongsTo, manyToMany, beforeCreate } from '@adonisjs/lucid/orm'
 import User from './user.js'
 import ParcelAction from './parcel_action.js'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
+import { randomUUID } from 'crypto'
 
 export default class Parcel extends BaseModel {
   @column({ isPrimary: true })
@@ -14,17 +15,26 @@ export default class Parcel extends BaseModel {
   @column()
   declare area_of_parcel: number
 
-  @column()
-  declare parent_parcel_ids: JSON
+  @column({
+    prepare: (value: string[] | null) => value ? JSON.stringify(value) : null,
+    consume: (value: string | null) => value ? JSON.parse(value) : null,
+  })
+  declare parent_parcel_ids: string[] | null
 
-  @column()
-  declare child_parcel_ids: JSON
+  @column({
+    prepare: (value: string[] | null) => value ? JSON.stringify(value) : null,
+    consume: (value: string | null) => value ? JSON.parse(value) : null,
+  })
+  declare child_parcel_ids: string[] | null
 
   @column()
   declare is_active: boolean
 
   @column()
-  declare modified_by: number | null
+  declare is_available_for_sale: boolean
+
+  @column()
+  declare modified_by: string | null
 
   @column()
   declare property_action: number | null
@@ -38,6 +48,11 @@ export default class Parcel extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
+  @beforeCreate()
+  public static async createParcelId(parcel: Parcel) {
+    parcel.parcel_id = randomUUID()
+  }
+
   @belongsTo(() => User, {
     foreignKey: 'modified_by',
     localKey: 'user_gid',
@@ -48,4 +63,11 @@ export default class Parcel extends BaseModel {
     foreignKey: 'property_action',
   })
   declare action: BelongsTo<typeof ParcelAction>
+
+  @manyToMany(() => User, {
+    pivotTable: 'property_transactions',
+    pivotForeignKey: 'parcel_id',
+    pivotRelatedForeignKey: 'new_owner_id',
+  })
+  declare owners: ManyToMany<typeof User>
 }

@@ -2,6 +2,7 @@ import User from '#models/user'
 import { loginValidator, registerValidator, updateUserValidator } from '#validators/auth'
 import type { HttpContext } from '@adonisjs/core/http'
 import { DateTime } from 'luxon'
+import hash from '@adonisjs/core/services/hash'
 
 export default class AuthController {
   // User registration
@@ -30,18 +31,22 @@ export default class AuthController {
     return { user, token };
   }
 
-  // User login
-  async login({ request }: HttpContext) {
-    const { email, password } = await request.validateUsing(loginValidator)
-
-    // Verify credentials
-    const user = await User.verifyCredentials(email, password)
-
-    // Create an access token for the user
-    const token = await User.accessTokens.create(user)
-    return { user, token, role: user.role };
+  async login({ request, response }: HttpContext) {
+    try {
+      const { email, password } = await request.validateUsing(loginValidator)
+      const user = await User.query().where('email', email).first()
+  
+      if (!user || !(await hash.verify(user.password, password))) {
+        return response.status(401).json({ error: 'Invalid credentials' })
+      }
+  
+      const token = await User.accessTokens.create(user)
+      return { user, token, role: user.role }
+    } catch (error) {
+      console.error('Login error:', error)
+      return response.status(500).json({ error: 'An error occurred during login', details: error.message })
+    }
   }
-
   // Get user details
   async getUser({ params, auth }: HttpContext) {
     await auth.check()

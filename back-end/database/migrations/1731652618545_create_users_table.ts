@@ -9,7 +9,7 @@ export default class CreateUsersTable extends BaseSchema {
       table.increments('id').primary()
 
       // Imposta user_gid come unsigned per garantire la corrispondenza con modified_by in parcels
-      table.integer('user_gid').unsigned().unique().notNullable().index()
+      table.string('user_gid').unique().notNullable().index()
       table.string('email', 255).notNullable().unique()
       table.string('password', 180).notNullable()
       table.string('remember_me_token').nullable()

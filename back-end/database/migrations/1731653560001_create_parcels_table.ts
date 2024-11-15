@@ -13,7 +13,7 @@ export default class CreateParcelsTable extends BaseSchema {
       table.json('child_parcel_ids')
       table.boolean('is_active').defaultTo(true)
 
-      table.integer('modified_by').unsigned().nullable()
+      table.string('modified_by').nullable()
       table.foreign('modified_by').references('user_gid').inTable('users').onDelete('SET NULL')
 
       table.integer('property_action').unsigned().references('id').inTable('m_parcel_actions').onDelete('SET NULL')
